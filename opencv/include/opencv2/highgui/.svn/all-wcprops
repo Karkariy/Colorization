@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/highgui
+END
+cap_ios.h
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/highgui/cap_ios.h
+END
+highgui.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/highgui/highgui.hpp
+END
+highgui_c.h
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/highgui/highgui_c.h
+END

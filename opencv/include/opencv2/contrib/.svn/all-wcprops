@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/contrib
+END
+hybridtracker.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/contrib/hybridtracker.hpp
+END
+contrib.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/contrib/contrib.hpp
+END
+retina.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/contrib/retina.hpp
+END
+detection_based_tracker.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/contrib/detection_based_tracker.hpp
+END
+openfabmap.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/contrib/openfabmap.hpp
+END

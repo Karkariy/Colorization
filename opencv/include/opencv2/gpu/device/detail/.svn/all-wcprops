@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu/device/detail
+END
+type_traits_detail.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu/device/detail/type_traits_detail.hpp
+END
+vec_distance_detail.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu/device/detail/vec_distance_detail.hpp
+END
+transform_detail.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu/device/detail/transform_detail.hpp
+END
+reduction_detail.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu/device/detail/reduction_detail.hpp
+END
+color_detail.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu/device/detail/color_detail.hpp
+END

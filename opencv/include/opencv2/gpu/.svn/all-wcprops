@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu
+END
+gpu.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu/gpu.hpp
+END
+gpumat.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu/gpumat.hpp
+END
+stream_accessor.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu/stream_accessor.hpp
+END
+devmem2d.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/gpu/devmem2d.hpp
+END

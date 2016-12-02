@@ -1,0 +1,83 @@
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core
+END
+wimage.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/wimage.hpp
+END
+core_c.h
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/core_c.h
+END
+internal.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/internal.hpp
+END
+gpumat.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/gpumat.hpp
+END
+mat.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/mat.hpp
+END
+cuda_devptrs.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/cuda_devptrs.hpp
+END
+devmem2d.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/devmem2d.hpp
+END
+operations.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/operations.hpp
+END
+opengl_interop.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/opengl_interop.hpp
+END
+version.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/version.hpp
+END
+types_c.h
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/types_c.h
+END
+eigen.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/eigen.hpp
+END
+core.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/core/core.hpp
+END

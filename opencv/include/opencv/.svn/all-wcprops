@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv
+END
+cvwimage.h
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/cvwimage.h
+END
+cxeigen.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/cxeigen.hpp
+END
+cxcore.h
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/cxcore.h
+END
+cxcore.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/cxcore.hpp
+END
+highgui.h
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/highgui.h
+END
+cvaux.h
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/cvaux.h
+END
+cvaux.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/cvaux.hpp
+END
+cxmisc.h
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/cxmisc.h
+END
+cv.h
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/cv.h
+END
+cv.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/cv.hpp
+END
+ml.h
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv/ml.h
+END

@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/ocl
+END
+ocl.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/ocl/ocl.hpp
+END
+matrix_operations.hpp
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/esir3_stylization/!svn/ver/2/trunk/extlibs/opencv/include/opencv2/ocl/matrix_operations.hpp
+END
