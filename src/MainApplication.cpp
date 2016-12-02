@@ -20,8 +20,8 @@ std::vector<Scalar> colors;
 
 int main( int argc, char* argv[])
 {
-	std::string transferType = "img2vid"; // img2img, img2vid, vid2vid
-	std::string sourceFile = "data/image1.jpg";
+	std::string transferType = "vid2vid"; // img2img, img2vid, vid2vid
+	std::string sourceFile = "data/piscine.mp4";
 	std::string targetFile = "data/foot.mp4";
 
 	if(argc >= 4)
@@ -113,7 +113,7 @@ int main( int argc, char* argv[])
 			return -1;
 		}
 		
-		int nbFrames = 15*25;
+		int nbFrames ;
 		std::cout<<"Entrez le nombre de frames a traiter : "<<std::endl;
 		std::cin>>nbFrames;
 		colorTransfert_vid2Vid(videoSource, videoTarget, nbFrames);
@@ -161,11 +161,6 @@ void colorTransfert_image2Vid(Mat &imageSource, VideoCapture &videoTarget, int n
 
 		(*videoResult) << frameColorized;
 
-		
-		//namedWindow( "Image Result", CV_WINDOW_AUTOSIZE ); // Create a window for display.
-		//imshow( "Image Result", frameColorized );             // Show our image inside it.
-		
-		std::cout<<i<<" / "<<nbFrames<<std::endl;
 	}
 
 	cout <<  "Finish." << std::endl ;
@@ -181,15 +176,9 @@ void colorTransfert_vid2Vid(VideoCapture &videoSource, VideoCapture &videoTarget
 
 	Mat pre_frameSource;
 	videoSource >> pre_frameSource; 	
-	Mat pre_ImT_yCbCr = TransMat::instance().image_rgb2yCbCr(pre_frameSource);
-	Scalar pre_yCbCrMoy_t, pre_stddev_t;
-	meanStdDev(pre_ImT_yCbCr, pre_yCbCrMoy_t, pre_stddev_t);
 
 	Mat frameSource;
     videoSource >> frameSource; // get a new frame from camera
-	Mat ImT_yCbCr = TransMat::instance().image_rgb2yCbCr(frameSource);
-	Scalar yCbCrMoy_t, stddev_t;
-	meanStdDev(ImT_yCbCr, yCbCrMoy_t, stddev_t);
 
 	Mat post_frameSource;
        
@@ -202,54 +191,15 @@ void colorTransfert_vid2Vid(VideoCapture &videoSource, VideoCapture &videoTarget
 		if(videoResult == NULL)
 			videoResult = new VideoWriter("results/result.avi", -1, 25, frameTarget.size(), true);
 		
-		//Mat ImS_lab = TransMat::instance().image_rgb2lab(imageSource);
-		Mat ImS_yCbCr = TransMat::instance().image_rgb2yCbCr(frameTarget);
-		MatConstIterator_<Vec3d> it = ImS_yCbCr.begin<Vec3d>();
-		Scalar yCbCrMoy_s, stddev_s;
-		meanStdDev(ImS_yCbCr, yCbCrMoy_s, stddev_s);
 
-		Mat post_ImT_yCbCr = TransMat::instance().image_rgb2yCbCr(post_frameSource);
-		Scalar post_yCbCrMoy_t, post_stddev_t;
-		meanStdDev(post_ImT_yCbCr, post_yCbCrMoy_t, post_stddev_t);
-		
-		
-		 //traitements
-		Mat ImR_yCbCr = Mat::zeros(ImS_yCbCr.size(), CV_64FC3);
-		MatIterator_<Vec3d> it_labR = ImR_yCbCr.begin<Vec3d>();
-		MatIterator_<Vec3d> it_labS = ImS_yCbCr.begin<Vec3d>();
-
-		for(; it_labR != ImR_yCbCr.end<Vec3d>(); ++it_labR, ++it_labS)
-		{
-			Scalar std = (pre_stddev_t + stddev_t + post_stddev_t)/3.0;
-			Scalar moy = (pre_yCbCrMoy_t + yCbCrMoy_t + post_yCbCrMoy_t)/3.0;
-
-			(*it_labR)[0] = (std[0] / stddev_s[0]) * ((*it_labS)[0] - yCbCrMoy_s[0]) + moy[0];
-			(*it_labR)[1] = (std[1] / stddev_s[1]) * ((*it_labS)[1] - yCbCrMoy_s[1]) + moy[1];
-			(*it_labR)[2] = (std[2] / stddev_s[2]) * ((*it_labS)[2] - yCbCrMoy_s[2]) + moy[2];			
-		}
-		
-		// back to RGB
-		//Mat imageResult = TransMat::instance().image_lab2rgb(ImR_lab);
-		Mat imageResult = TransMat::instance().image_yCbCr2rgb(ImR_yCbCr);
-		normalize(imageResult, imageResult, 0, 255, NORM_MINMAX);
-
-		(*videoResult) << imageResult;
-
-		/*
+		Mat frameColorized = colorTransfert_image2image(post_frameSource,frameTarget);
+		//normalize(frame, frame, 0, 255, NORM_MINMAX);
 		namedWindow( "Image Result", CV_WINDOW_AUTOSIZE ); // Create a window for display.
-		imshow( "Image Result", imageResult );             // Show our image inside it.
-		*/
+		imshow( "Image Result", frameColorized );             // Show our image inside it.
+		
 		std::cout<<i<<" / "<<nbFrames<<std::endl;
+		(*videoResult) << frameColorized;
 
-		pre_frameSource = frameSource;
-		pre_ImT_yCbCr = ImT_yCbCr;
-		pre_yCbCrMoy_t = yCbCrMoy_t;
-		pre_stddev_t = stddev_t;
-
-		frameSource = post_frameSource;
-		ImT_yCbCr = post_ImT_yCbCr;
-		yCbCrMoy_t = post_yCbCrMoy_t;
-		stddev_t = post_stddev_t;
 	}
 
 	cout <<  "Finish." << std::endl ;
