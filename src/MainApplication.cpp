@@ -20,9 +20,9 @@ std::vector<Scalar> colors;
 
 int main( int argc, char* argv[])
 {
-	std::string transferType = "vid2vid"; // img2img, img2vid, vid2vid
-	std::string sourceFile = "data/piscine.mp4";
-	std::string targetFile = "data/foot.mp4";
+	std::string transferType = "img2img"; // img2img, img2vid, vid2vid
+	std::string sourceFile = "data/vangogh.jpg";
+	std::string targetFile = "data/Capture.PNG";
 
 	if(argc >= 4)
 	{
@@ -73,7 +73,7 @@ int main( int argc, char* argv[])
 	
 			std::vector<Point> *pointsSource = new std::vector<Point>;
 			std::vector<Point> *pointsTarget = new std::vector<Point>;
-			setMouseCallback("Color image source", mouseHandlerSource, pointsSource);
+				("Color image source", mouseHandlerSource, pointsSource);
 			setMouseCallback("Color image target", mouseHandlerTarget, pointsTarget);
 	
 			colors.push_back(Scalar(0,0,255));
@@ -209,6 +209,86 @@ void colorTransfert_vid2Vid(VideoCapture &videoSource, VideoCapture &videoTarget
     waitKey(0);                                          // Wait for a keystroke in the window
 }
 
+void computeTransformMatrix(Mat &ImT_lab, Mat &ImS_lab, Mat &MuTarget, Mat &MuSource,Mat & Transform)
+{
+	//Calcul de la moyenne et écart-type de l'image Target
+	Scalar labMoy_t, stddev_t;
+	meanStdDev(ImT_lab, labMoy_t, stddev_t);
+
+	//Calcul de la moyenne et écart-type de l'image source
+	Scalar labMoy_s, stddev_s;
+	meanStdDev(ImS_lab, labMoy_s, stddev_s);
+	// CALCUL DE LA MATRICE SAMPLE S QUI VA PERMETTRE DE CALCULER LA MATRICE DE COV SIGMAs
+	Mat sampleS = Mat::zeros(ImS_lab.rows*ImS_lab.cols, 2, CV_32FC1);
+	Mat sampleI = Mat::zeros(ImT_lab.rows*ImT_lab.cols, 2, CV_32FC1);
+
+	for (int i = 0; i < ImS_lab.rows; i++)
+	{
+		for (int j = 0; j < ImS_lab.cols; j++)
+		{
+			sampleS.at<float>(i*ImS_lab.cols + j, 0) = ImS_lab.at<Vec3f>(i, j)[1];  // a
+			sampleS.at<float>(i*ImS_lab.cols + j, 1) = ImS_lab.at<Vec3f>(i, j)[2]; // b
+		}
+	}
+	// Calcul matrice de cov SigmaS
+	Mat covS, muS;
+	cv::calcCovarMatrix(sampleS, covS, muS, CV_COVAR_NORMAL | CV_COVAR_ROWS, CV_32FC1);
+
+	covS = covS / (sampleS.rows - 1);
+
+	// ----- //
+	// CALCUL DE LA MATRICE SAMPLE i QUI VA PERMETTRE DE CALCULER LA MATRICE DE COV SIGMAi
+
+
+	for (int i = 0; i < ImT_lab.rows; i++)
+	{
+		for (int j = 0; j < ImT_lab.cols; j++)
+		{
+			sampleI.at<float>(i*ImT_lab.cols + j, 0) = ImT_lab.at<Vec3f>(i, j)[1];  // a
+			sampleI.at<float>(i*ImT_lab.cols + j, 1) = ImT_lab.at<Vec3f>(i, j)[2]; // b
+		}
+	}
+	// Calcul matrice de cov SigmaI
+	Mat covI, muI;
+	cv::calcCovarMatrix(sampleI, covI, muI, CV_COVAR_NORMAL | CV_COVAR_ROWS, CV_32FC1);
+	//?? que fais cette ligne que l'on a copier coller ??
+	covI = covI / (sampleI.rows - 1);
+
+	//Régularisation : = max(covI, 7.5Identity)
+	covI.at<float>(0, 0) = (covI.at<float>(0, 0) < 7.5f) ? 7.5f : covI.at<float>(0, 0);
+	covI.at<float>(1, 1) = (covI.at<float>(1, 1) < 7.5f) ? 7.5f : covI.at<float>(1, 1);
+
+	//Matrice permettant le calcul de la transformée
+	// Transform = SigmaIMinusHalfPow * ( SigmaIHalfPow * covS * SigmaIHalfPow)^1/2 * SigmaIMinusHalfPow
+
+	Mat SigmaIMinusHalfPow = Mat::zeros(2, 2, CV_32FC1);
+	Mat SigmaIHalfPow = Mat::zeros(2, 2, CV_32FC1);
+
+	computePowerMatrix(covI, SigmaIHalfPow, 0.5f);
+	computePowerMatrix(covI, SigmaIMinusHalfPow, -0.5f);
+
+	// TransformInterSig = SigmaIHalfPow * covS * SigmaIHalfPow
+	Mat TransformInterSig = Mat::zeros(2, 2, CV_32FC1);
+	TransformInterSig = SigmaIHalfPow * covS * SigmaIHalfPow;
+
+	// TransformInterSigHalfPow = TransformInterSig ^ 1/2
+	Mat TransformInterSigHalfPow = Mat::zeros(2, 2, CV_32FC1);
+	computePowerMatrix(TransformInterSig, TransformInterSigHalfPow, 0.5);
+
+	//Calcul de la transformée
+	Transform = SigmaIMinusHalfPow * TransformInterSigHalfPow * SigmaIMinusHalfPow;
+
+	// Matrice [MoyenneA,MoyennneB] avec MoyenneA la moyenne de a sur la target (vice versa b) 
+	//Mat MuTarget = Mat::zeros(2,1, CV_32FC1);
+	MuTarget.at<float>(0, 0) = labMoy_t[1];  // a
+	MuTarget.at<float>(1, 0) = labMoy_t[2];  // b
+	// Matrice [MoyenneA,MoyennneB] avec MoyenneA la moyenne de a sur la source (vice versa b) 
+
+	//Mat MuSource = Mat::zeros(2,1, CV_32FC1);
+	MuSource.at<float>(0, 0) = labMoy_s[1];  // a
+	MuSource.at<float>(1, 0) = labMoy_s[2];  // b
+}
+
 Mat colorTransfert_image2image(Mat &imageSource, Mat &imageTarget)
 {
 	// Image source dans l'espace de couleurs Lab
@@ -221,9 +301,7 @@ Mat colorTransfert_image2image(Mat &imageSource, Mat &imageTarget)
 	//Conversion en BGR -> Lab
 	cvtColor(imageSourceConverted,ImS_lab, CV_BGR2Lab);
 
-	//Calcul de la moyenne et écart-type de l'image source
-	Scalar labMoy_s, stddev_s;
-	meanStdDev(ImS_lab, labMoy_s, stddev_s);
+
 		
 	// Image Target dans l'espace de couleurs Lab
 	Mat ImT_lab;
@@ -233,84 +311,16 @@ Mat colorTransfert_image2image(Mat &imageSource, Mat &imageTarget)
 	//Conversion en Lab
 	cvtColor(imageTargetConverted,ImT_lab, CV_BGR2Lab);
 	
-	
-	//Calcul de la moyenne et écart-type de l'image Target
-	Scalar labMoy_t, stddev_t;
-	meanStdDev(ImT_lab, labMoy_t, stddev_t);
-	
-	// CALCUL DE LA MATRICE SAMPLE S QUI VA PERMETTRE DE CALCULER LA MATRICE DE COV SIGMAs
-	Mat sampleS = Mat::zeros(ImS_lab.rows*ImS_lab.cols,2, CV_32FC1);
-	
-	for(int i=0; i<imageSource.rows;i++)
-	{
-		for(int j=0; j<imageSource.cols;j++)
-		{
-			sampleS.at<float>(i*imageSource.cols+j,0)= ImS_lab.at<Vec3f>(i,j)[1];  // a
-			sampleS.at<float>(i*imageSource.cols+j,1) = ImS_lab.at<Vec3f>(i,j)[2]; // b
-		}
-	}
-	// Calcul matrice de cov SigmaS
-	Mat covS, muS;
-	cv::calcCovarMatrix(sampleS, covS, muS, CV_COVAR_NORMAL | CV_COVAR_ROWS, CV_32FC1);
-
-	covS = covS / (sampleS.rows - 1);
-
-	// ----- //
-	// CALCUL DE LA MATRICE SAMPLE i QUI VA PERMETTRE DE CALCULER LA MATRICE DE COV SIGMAi
-	Mat sampleI = Mat::zeros(ImT_lab.rows*ImT_lab.cols,2, CV_32FC1);
-
-	for(int i=0; i<imageTarget.rows;i++)
-	{
-		for(int j=0; j<imageTarget.cols;j++)
-		{
-			sampleI.at<float>(i*imageTarget.cols+j,0)= ImT_lab.at<Vec3f>(i,j)[1];  // a
-			sampleI.at<float>(i*imageTarget.cols+j,1) = ImT_lab.at<Vec3f>(i,j)[2]; // b
-		}
-	}
-	// Calcul matrice de cov SigmaI
-	Mat covI, muI;
-	cv::calcCovarMatrix(sampleI, covI, muI, CV_COVAR_NORMAL | CV_COVAR_ROWS,CV_32FC1);
-	//?? que fais cette ligne que l'on a copier coller ??
-	covI = covI / (sampleI.rows - 1);
-
-	//Régularisation : = max(covI, 7.5Identity)
-	covI.at<float>(0,0) = ( covI.at<float>(0,0) < 7.5f) ? 7.5f : covI.at<float>(0,0);
-	covI.at<float>(1,1) = ( covI.at<float>(1,1) < 7.5f) ? 7.5f : covI.at<float>(1,1);
-
-	//Matrice permettant le calcul de la transformée
-	// Transform = SigmaIMinusHalfPow * ( SigmaIHalfPow * covS * SigmaIHalfPow)^1/2 * SigmaIMinusHalfPow
-	
-	Mat SigmaIMinusHalfPow = Mat::zeros(2,2, CV_32FC1);
-	Mat SigmaIHalfPow = Mat::zeros(2,2, CV_32FC1);
-
-	computePowerMatrix(covI,SigmaIHalfPow,0.5f);
-	computePowerMatrix(covI,SigmaIMinusHalfPow,-0.5f);
-
-	// TransformInterSig = SigmaIHalfPow * covS * SigmaIHalfPow
-	Mat TransformInterSig = Mat::zeros(2,2, CV_32FC1);
-	TransformInterSig = SigmaIHalfPow * covS * SigmaIHalfPow;
-	
-	// TransformInterSigHalfPow = TransformInterSig ^ 1/2
-	Mat TransformInterSigHalfPow = Mat::zeros(2,2, CV_32FC1);
-	computePowerMatrix(TransformInterSig,TransformInterSigHalfPow,0.5);
-
-	//Calcul de la transformée
-	Mat Transform = Mat::zeros(2,2, CV_32FC1);
-	Transform = SigmaIMinusHalfPow * TransformInterSigHalfPow * SigmaIMinusHalfPow;
+	Mat MuTarget = Mat::zeros(2, 1, CV_32FC1);
+	Mat MuSource = Mat::zeros(2, 1, CV_32FC1);
+	Mat Transform = Mat::zeros(2, 2, CV_32FC1);
 
 	//Image resultat dans l'espace Lab
 	Mat ImR_lab = Mat::zeros(ImT_lab.size(), CV_32FC3);
 
-	// Matrice [MoyenneA,MoyennneB] avec MoyenneA la moyenne de a sur la target (vice versa b) 
-	Mat MuTarget = Mat::zeros(2,1, CV_32FC1);
-	MuTarget.at<float>(0,0) = labMoy_t[1];  // a
-	MuTarget.at<float>(1,0) = labMoy_t[2];  // b
-	// Matrice [MoyenneA,MoyennneB] avec MoyenneA la moyenne de a sur la source (vice versa b) 
-	Mat MuSource = Mat::zeros(2,1, CV_32FC1);
-	MuSource.at<float>(0,0) = labMoy_s[1];  // a
-	MuSource.at<float>(1,0) = labMoy_s[2];  // b
+	computeTransformMatrix(ImT_lab, ImS_lab,MuTarget,MuSource,Transform);
 
-	Mat MaskAlpha = createMaskAlpha(ImT_lab,5); //0 or 1(other sense) for horizontal | 2 or 3(other sense) for vertical 
+	Mat MaskAlpha = createMaskAlpha(ImT_lab,2); //0 or 1(other sense) for horizontal | 2 or 3(other sense) for vertical 
 
 
 	float alpha;
@@ -336,8 +346,8 @@ Mat colorTransfert_image2image(Mat &imageSource, Mat &imageTarget)
 	Mat imageResult ;
 	cvtColor(ImR_lab,imageResult, CV_Lab2BGR);
 	//affichage
-	//namedWindow( "Color Result", CV_WINDOW_AUTOSIZE );
-	//imshow( "Color Result", imageResult );
+	namedWindow( "Color Result", CV_WINDOW_AUTOSIZE );
+	imshow( "Color Result", imageResult );
 	//Ecriture
 	//normalize(imageResult, imageResult, 0, 255, NORM_MINMAX);
 	//imwrite("results/img2img.png", imageResult);
@@ -402,15 +412,30 @@ void computePowerMatrix(Mat &covI, Mat &SigmaIHalfPow, float exposant)
 
 void swatchesColorTransfert_image2image(Mat imageSource, Mat imageTarget, std::vector<Point> pointsSource, std::vector<Point> pointsTarget)
 {
-	Mat ImS_yCbCr = TransMat::instance().image_rgb2yCbCr(imageSource);			
-	Mat ImT_yCbCr = TransMat::instance().image_rgb2yCbCr(imageTarget);
+
+	//Changer en Lab et supprimer Transmat
+	Mat ImS_Lab; 
+	Mat ImT_Lab; 
+	Mat imageSourceConverted;
+	Mat imageTargetConverted;
+	
+	imageSource.convertTo(imageSourceConverted, CV_32FC3);
+	imageSourceConverted *= 1. / 255; // Normalisation
+
+	imageTarget.convertTo(imageTargetConverted, CV_32FC3);
+	imageTargetConverted *= 1. / 255; // Normalisation
+
+	 //Conversion en BGR -> Lab
+	cvtColor(imageSourceConverted, ImS_Lab, CV_BGR2Lab);
+	cvtColor(imageTargetConverted, ImT_Lab, CV_BGR2Lab);
+
 
 	// computation of stddev and mean for each swatch in the source image
 	std::vector<Scalar> stddevs_S, moys_S;
 	for(int i = 0; i < nb_swatches; ++i)
 	{
 		Point topLeft = pointsSource[i]-Point(swatch_width/2, swatch_height/2);
-		Mat swatch = ImS_yCbCr.colRange(topLeft.x,topLeft.x+swatch_width).rowRange(topLeft.y,topLeft.y+swatch_height); 
+		Mat swatch = ImS_Lab.colRange(topLeft.x,topLeft.x+swatch_width).rowRange(topLeft.y,topLeft.y+swatch_height); 
 		Scalar swatchMoy, swatchstddev;
 		meanStdDev(swatch, swatchMoy, swatchstddev);
 		moys_S.push_back(swatchMoy);
@@ -425,7 +450,7 @@ void swatchesColorTransfert_image2image(Mat imageSource, Mat imageTarget, std::v
 	for(int i = 0; i < nb_swatches; ++i)
 	{
 		Point topLeft = pointsTarget[i]-Point(swatch_width/2, swatch_height/2);
-		Mat swatch = ImT_yCbCr.colRange(topLeft.x,topLeft.x+swatch_width).rowRange(topLeft.y,topLeft.y+swatch_height); 
+		Mat swatch = ImT_Lab.colRange(topLeft.x,topLeft.x+swatch_width).rowRange(topLeft.y,topLeft.y+swatch_height); 
 		Scalar swatchMoy, swatchstddev;
 		meanStdDev(swatch, swatchMoy, swatchstddev);
 		moys_T.push_back(swatchMoy);
@@ -436,72 +461,109 @@ void swatchesColorTransfert_image2image(Mat imageSource, Mat imageTarget, std::v
 
 	// computation of a target image for each swatch
 	std::vector<Mat> Im_R_swatch;
-	Vec3d max_yCbCr(TransMat::instance().max_yCbCr.at<double>(0), TransMat::instance().max_yCbCr.at<double>(1), TransMat::instance().max_yCbCr.at<double>(2));
-	Vec3d min_yCbCr(TransMat::instance().min_yCbCr.at<double>(0), TransMat::instance().min_yCbCr.at<double>(1), TransMat::instance().min_yCbCr.at<double>(2));
 	
-	for(int i = 0; i < nb_swatches; ++i)
+	Mat ImR_Lab = Mat::zeros(imageTarget.rows, imageTarget.cols, CV_32FC3);
+
+	for(int s = 0; s < nb_swatches; ++s)
 	{
- 		Mat ImR_yCbCr = Mat::zeros(ImS_yCbCr.size(), CV_64FC3);
-		MatIterator_<Vec3d> it_yCbCrS = ImS_yCbCr.begin<Vec3d>();
-		MatIterator_<Vec3d> it_yCbCrR = ImR_yCbCr.begin<Vec3d>();
+		MatIterator_<Vec3f> it_Rlab = ImR_Lab.begin<Vec3f>();
+		MatIterator_<Vec3f> it_Tlab = ImT_Lab.begin<Vec3f>();
 
-		Vec3d max(0,0,0);
-		Vec3d min(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
+		Vec3f max(0,0,0);
+		Vec3f min(numeric_limits<float>::max(), numeric_limits<float>::max(), numeric_limits<float>::max());
 
-		for(; it_yCbCrR != ImR_yCbCr.end<Vec3d>(); ++it_yCbCrR, ++it_yCbCrS)
+		Point targetPoint = pointsTarget[s] - Point(swatch_width / 2, swatch_height / 2);
+		Point sourcePoint = pointsSource[s] - Point(swatch_width / 2, swatch_height / 2);
+
+		Mat swatchTarget = ImT_Lab.colRange(targetPoint.x, targetPoint.x + swatch_width).rowRange(targetPoint.y, targetPoint.y + swatch_height);
+		Mat swatchSource = ImS_Lab.colRange(sourcePoint.x, sourcePoint.x + swatch_width).rowRange(sourcePoint.y, sourcePoint.y + swatch_height);
+
+		Mat MuTarget = Mat::zeros(2, 1, CV_32FC1);
+		Mat MuSource = Mat::zeros(2, 1, CV_32FC1);
+		Mat Transform = Mat::zeros(2, 2, CV_32FC1);
+
+		computeTransformMatrix(swatchTarget, swatchSource, MuTarget, MuSource, Transform);
+
+
+		for (; it_Rlab != ImR_Lab.end<Vec3f>(); ++it_Rlab, ++it_Tlab)
 		{
-			Scalar stddev_s = 0, moy_s = 0;
-			Scalar stddev_t = 0, moy_t = 0;
+				Scalar stddev_s = 0, moy_s = 0;
+				Scalar stddev_t = 0, moy_t = 0;
+
+				float alpha = 0.0f;
+
+				Mat CTarget = Mat::zeros(2, 1, CV_32FC1);
+				CTarget.at<float>(0, 0) = (*it_Tlab)[1];  // a
+				CTarget.at<float>(1, 0) = (*it_Tlab)[2];  // b
+
+				Mat MatTrans = (Transform * (CTarget - MuTarget)) + MuSource;
+				(*it_Rlab)[0] = (*it_Tlab)[0]; // L
+				(*it_Rlab)[1] = (*it_Tlab)[1] * alpha + (1 - alpha) * MatTrans.at<float>(0, 0); // a
+				(*it_Rlab)[2] = (*it_Tlab)[2] * alpha + (1 - alpha) * MatTrans.at<float>(1, 0); // b 
+
+				/*(*it_Rlab)[0] = (*it_Tlab)[0];
+				(*it_Rlab)[1] = (stddevs_S[s][1] / (stddevs_T[s][1] == 0)?1 : stddevs_T[s][1]) * ((*it_Tlab)[1] - moys_T[s][1]) + moys_S[s][1];
+				(*it_Rlab)[2] = (stddevs_S[s][2] / (stddevs_T[s][2] == 0)?1 : stddevs_T[s][2]) * ((*it_Tlab)[2] - moys_T[s][2]) + moys_S[s][2];
+	*/
+				
 
 
-			(*it_yCbCrR)[0] = (stddevs_T[i][0] / (stddevs_S[i][0] == 0)?1 : stddevs_S[i][0]) * ((*it_yCbCrS)[0] - moys_S[i][0]) + moys_T[i][0];
-			(*it_yCbCrR)[1] = (stddevs_T[i][1] / (stddevs_S[i][1] == 0)?1 : stddevs_S[i][1]) * ((*it_yCbCrS)[1] - moys_S[i][1]) + moys_T[i][1];
-			(*it_yCbCrR)[2] = (stddevs_T[i][2] / (stddevs_S[i][2] == 0)?1 : stddevs_S[i][2]) * ((*it_yCbCrS)[2] - moys_S[i][2]) + moys_T[i][2];
-			
-			// max &  computation
-			max[0] = std::max((float)max[0], ((float)(*it_yCbCrR)[0]));
-			max[1] = std::max((float)max[1], ((float)(*it_yCbCrR)[1]));
-			max[2] = std::max((float)max[2], ((float)(*it_yCbCrR)[2]));
+				// max &  computation
+				max[0] = std::max((float)max[0], ((*it_Rlab)[0]));
+				max[1] = std::max((float)max[1], ((*it_Rlab)[1]));
+				max[2] = std::max((float)max[2], ((*it_Rlab)[2]));
 
-			min[0] = std::min((float)min[0], ((float)(*it_yCbCrR)[0]));
-			min[1] = std::min((float)min[1], ((float)(*it_yCbCrR)[1]));
-			min[2] = std::min((float)min[2], ((float)(*it_yCbCrR)[2]));
+				min[0] = std::min((float)min[0], ((*it_Rlab)[0]));
+				min[1] = std::min((float)min[1], ((*it_Rlab)[1]));
+				min[2] = std::min((float)min[2], ((*it_Rlab)[2]));
 		}
+
 
 		// normalize the swatch
-		it_yCbCrR = ImR_yCbCr.begin<Vec3d>();
-		for(; it_yCbCrR != ImR_yCbCr.end<Vec3d>(); ++it_yCbCrR)
+		for (int i = 0; i < ImR_Lab.rows; i++)
 		{
-			if(min[0] < 0 || max[0] > 255)
-				(*it_yCbCrR)[0] = ((*it_yCbCrR)[0]-min[0]) / (max[0]-min[0]) * std::min(255.0, max[0]-min[0]) + std::max(0.0, min[0]);
-			if(min[1] < -128 || max[1] > 127)
-				(*it_yCbCrR)[1] = ((*it_yCbCrR)[1]-min[1]) / (max[1]-min[1]) * std::min(255.0, max[1]-min[1]) + std::max(-128.0, min[1]);
-			if(min[2] < -128 || max[2] > 127)
-				(*it_yCbCrR)[2] = ((*it_yCbCrR)[2]-min[2]) / (max[2]-min[2]) * std::min(255.0, max[2]-min[2]) + std::max(-128.0, min[2]);
-
+			for (int j = 0; j < ImR_Lab.cols; j++)
+			{
+				if (min[0] < 0 || max[0] > 100)
+					ImR_Lab.at<Vec3f>(i, j)[0] = (ImR_Lab.at<Vec3f>(i, j)[0] - min[0]) / (max[0] - min[0]) * std::min(100.0f, max[0] - min[0]) + std::max(0.0f, min[0]);
+				if (min[1] < -128 || max[1] > 127)
+					ImR_Lab.at<Vec3f>(i, j)[1] = (ImR_Lab.at<Vec3f>(i, j)[1] - min[1]) / (max[1] - min[1]) * std::min(255.0f, max[1] - min[1]) + std::max(-128.0f, min[1]);
+				if (min[2] < -128 || max[2] > 127)
+					ImR_Lab.at<Vec3f>(i, j)[2] = (ImR_Lab.at<Vec3f>(i, j)[2] - min[2]) / (max[2] - min[2]) * std::min(255.0f, max[2] - min[2]) + std::max(-128.0f, min[2]);
+			}
 		}
 		
+
+		Mat imageResult;
+		cvtColor(ImR_Lab, imageResult, CV_Lab2BGR);
+
+
 		// Display of the swatch i
-		Mat imageResult = TransMat::instance().image_yCbCr2rgb(ImR_yCbCr);
-		Mat imageResultInt = Mat(imageResult.size(), CV_8UC3);
-		imageResult.convertTo(imageResultInt, CV_8UC3);
+		/*Mat imageResultInt = Mat(imageResult.size(), CV_8UC3);
+		imageResult.convertTo(imageResultInt, CV_8UC3);*/
 		stringstream ss;
-		ss<<"Color Result Swacth "<<i;
-		namedWindow(ss.str(), CV_WINDOW_AUTOSIZE );// Create a window for display.
-		imshow(ss.str(), imageResultInt ); 
+		
+		ss<<"Color Result Swatch "<<s;
+		//namedWindow(ss.str(), CV_WINDOW_AUTOSIZE );// Create a window for display.
+		//imshow(ss.str(), imageResultInt ); 
+		
+		namedWindow(ss.str(), CV_WINDOW_AUTOSIZE);
+		imshow(ss.str(), imageResult);
+		//Ecriture
 		stringstream ss2;
-		ss2<<"results/swatches/swatch_"<<i<<".png";
-		imwrite(ss2.str(), imageResultInt);
-		Im_R_swatch.push_back(ImR_yCbCr);
+		ss2 << "results/swatches/swatch_" << s << ".png";
+
+		normalize(imageResult, imageResult, 0, 255, NORM_MINMAX);
+		imwrite(ss2.str(), imageResult);
+
+		Im_R_swatch.push_back(ImR_Lab);
 	}
 
 
 	// Choix du swatch pour chaque pixel
 	float sigma;
-	Mat ImR_yCbCr;
 	do
 	{
-		ImR_yCbCr = Mat::zeros(ImS_yCbCr.size(), CV_64FC3);
 		std::cout << "Entrez un sigma (0 pour ne pas faire de ponderation, -1 pour sortir) :" << std::endl;
 		std::cin >> sigma;
 
@@ -509,27 +571,25 @@ void swatchesColorTransfert_image2image(Mat imageSource, Mat imageTarget, std::v
 			break;
 
 		if(nb_swatches > 1)
-		{			
-			MatIterator_<Vec3d> it_yCbCrS = ImS_yCbCr.begin<Vec3d>();
-			MatIterator_<Vec3d> it_yCbCrR = ImR_yCbCr.begin<Vec3d>();
-
-			for(; it_yCbCrR != ImR_yCbCr.end<Vec3d>(); ++it_yCbCrR, ++it_yCbCrS)
+		{		
+			MatIterator_<Vec3f> it_Tlab = ImT_Lab.begin<Vec3f>();
+			MatIterator_<Vec3f> it_Rlab = ImR_Lab.begin<Vec3f>();
+			for (; it_Rlab != ImR_Lab.end<Vec3f>(); ++it_Rlab, ++it_Tlab)
 			{
-				Point pos = it_yCbCrR.pos();
+				Point pos = it_Rlab.pos();
 
-				// Application de la ponderation
-				if(sigma > 0)
+				// Application de la pondération
+				if (sigma > 0)
 				{
 					std::vector<float> distances;
 					float pondSum = 0;
 
-					for(int i = 0; i < Im_R_swatch.size(); ++i)
+					for (int k = 0; k < Im_R_swatch.size(); ++k)
 					{
-						Vec3d moy = Vec3d(moys_S.at(i)[0], moys_S.at(i)[1], moys_S.at(i)[2]);
-						Vec3d yCbCr = (*it_yCbCrS) - moy;
+						Vec3f moy = Vec3f(moys_S.at(k)[0], moys_S.at(k)[1], moys_S.at(k)[2]);
+						Vec3f Lab = (*it_Tlab) - moy;
+						float currentDist = sqrt(Lab[0] * Lab[0] + Lab[1] * Lab[1] + Lab[2] * Lab[2]);
 
-						float currentDist = sqrt(yCbCr[0]*yCbCr[0] + yCbCr[1]*yCbCr[1] + yCbCr[2]*yCbCr[2]);
-			
 						distances.push_back(currentDist);
 						pondSum += currentDist;
 					}
@@ -537,50 +597,53 @@ void swatchesColorTransfert_image2image(Mat imageSource, Mat imageTarget, std::v
 					float sum_w = 0;
 					std::vector<float> w;
 
-					for(int i = 0; i < Im_R_swatch.size(); ++i)
+					for (int i = 0; i < Im_R_swatch.size(); ++i)
 					{
-						double wi = cv::exp(- 2*(double)(distances[i]*distances[i]) / (sigma*sigma));
+						//float wi = cv::exp(-2 * (float)(distances[i] * distances[i]) / (sigma*sigma));
+						float wi = cv::exp(-2 * (float)(distances[i] * distances[i]) / (sigma*sigma));
 						w.push_back(wi);
 						sum_w += wi;
 					}
 
 					int i = 0;
-					for(std::vector<Mat>::iterator it_swatches = Im_R_swatch.begin(); it_swatches != Im_R_swatch.end(); ++it_swatches, ++i)
+					for (std::vector<Mat>::iterator it_swatches = Im_R_swatch.begin(); it_swatches != Im_R_swatch.end(); ++it_swatches, ++i)
 					{
 						// non local mean
-						(*it_yCbCrR) += (*it_swatches).at<Vec3d>(pos) * (w[i]/sum_w);
+						(*it_Rlab) += (*it_swatches).at<Vec3f>(pos)*(w[i] / sum_w);
 					}
-				}
-				// Winner takes all
+				}				// Winner takes all
 				else
 				{
 					float distSwatch = numeric_limits<float>::max();
-					int i=0;
-					for(std::vector<Mat>::iterator it_swatches = Im_R_swatch.begin() ; it_swatches != Im_R_swatch.end(); ++it_swatches, ++i)
+					int k = 0;
+					for (std::vector<Mat>::iterator it_swatches = Im_R_swatch.begin(); it_swatches != Im_R_swatch.end(); ++it_swatches, ++k)
 					{
-						Vec3d moy = Vec3d(moys_S.at(i)[0], moys_S.at(i)[1], moys_S.at(i)[2]);
-						Vec3d yCbCr = (*it_yCbCrS) - moy;
+						Vec3f moy = Vec3f(moys_S.at(k)[0], moys_S.at(k)[1], moys_S.at(k)[2]);
+						Vec3f Lab = *it_Tlab - moy;
 
-						float currentDist = sqrt(yCbCr[0]*yCbCr[0] + yCbCr[1]*yCbCr[1] + yCbCr[2]*yCbCr[2]);
-			
-						if(currentDist < distSwatch)
+						float currentDist = sqrt(Lab[0] * Lab[0] + Lab[1] * Lab[1] + Lab[2] * Lab[2]);
+
+						if (currentDist < distSwatch)
 						{
 							distSwatch = currentDist;
-							(*it_yCbCrR) = (*it_swatches).at<Vec3d>(pos);
+							(*it_Rlab) = (*it_swatches).at<Vec3f>(pos);
 						}
 					}
 				}
 			}
 		}
 		else
-			ImR_yCbCr = Im_R_swatch[0];
+			ImR_Lab = Im_R_swatch[0];
 
-		Mat imageResult = TransMat::instance().image_yCbCr2rgb(ImR_yCbCr);
-		Mat imageResultInt = Mat(imageResult.size(), CV_8UC3);
-		imageResult.convertTo(imageResultInt, CV_8UC3);
-		namedWindow( "Color Result", CV_WINDOW_AUTOSIZE );
-		imshow( "Color Result", imageResultInt );
-		imwrite("results/swatches/swatch_result.png", imageResultInt);
+		Mat imageResult;
+		cvtColor(ImR_Lab, imageResult, CV_Lab2BGR);
+		//affichage
+		namedWindow("Color Result", CV_WINDOW_AUTOSIZE);
+		imshow("Color Result", imageResult);
+
+
+		normalize(imageResult, imageResult, 0, 255, NORM_MINMAX);
+		imwrite("results/swatches/swatch_result.png", imageResult);
 		waitKey(0);
 	}
 	while(nb_swatches > 1 && sigma >= 0);

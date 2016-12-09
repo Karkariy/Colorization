@@ -7,6 +7,7 @@
 
 void colorTransfert_image2Vid(Mat &imageSource, VideoCapture &videoTarget, int nbFrames);
 void colorTransfert_vid2Vid(VideoCapture &videoSource, VideoCapture &videoTarget, int nbFrames);
+void computeTransformMatrix(Mat &ImT_lab, Mat &ImS_lab, Mat &MuTarget, Mat &MuSource, Mat & Transform);
 Mat  colorTransfert_image2image(Mat &imageSource, Mat &imageTarget);
 void swatchesColorTransfert_image2image(Mat imageSource, Mat imageTarget, std::vector<Point> pointsSource, std::vector<Point> pointsTarget);
 void mouseHandlerSource(int event, int x, int y, int flags, void* param);
